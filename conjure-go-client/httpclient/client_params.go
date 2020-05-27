@@ -23,6 +23,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/palantir/conjure-go-runtime/v2/conjure-go-client/httpclient/internal/tcpusertimeout"
 	"github.com/palantir/pkg/bytesbuffers"
 	"github.com/palantir/pkg/retry"
 	werror "github.com/palantir/witchcraft-go-error"
@@ -216,6 +217,13 @@ func WithDisableTraceHeaderPropagation() ClientParam {
 func WithHTTPTimeout(timeout time.Duration) ClientOrHTTPClientParam {
 	return clientOrHTTPClientParamFunc(func(b *httpClientBuilder) error {
 		b.Timeout = timeout
+		return nil
+	})
+}
+
+func WithTCPUserTimeout(timeout time.Duration) ClientOrHTTPClientParam {
+	return clientOrHTTPClientParamFunc(func(b *httpClientBuilder) error {
+		b.TCPUserTimeout = tcpusertimeout.NewDialWrapper(timeout)
 		return nil
 	})
 }

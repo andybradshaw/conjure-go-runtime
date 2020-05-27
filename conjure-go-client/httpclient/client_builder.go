@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/palantir/conjure-go-runtime/v2/conjure-go-client/httpclient/internal"
 	"github.com/palantir/pkg/bytesbuffers"
 	"github.com/palantir/pkg/retry"
 	"github.com/palantir/pkg/tlsconfig"
@@ -58,6 +59,7 @@ type httpClientBuilder struct {
 	DisableHTTP2          bool
 	DisableRecovery       bool
 	DisableTracing        bool
+	TCPUserTimeout        internal.DialWrapper
 	IdleConnTimeout       time.Duration
 	TLSHandshakeTimeout   time.Duration
 	ExpectContinueTimeout time.Duration
@@ -171,6 +173,9 @@ func httpClientAndRoundTripHandlersFromBuilder(b *httpClientBuilder) (*http.Clie
 		IdleConnTimeout:       b.IdleConnTimeout,
 		TLSHandshakeTimeout:   b.TLSHandshakeTimeout,
 		ResponseHeaderTimeout: b.ResponseHeaderTimeout,
+	}
+	if b.TCPUserTimeout != nil {
+		transport.DialContext = b.TCPUserTimeout(transport.DialContext)
 	}
 	if b.ProxyDialerBuilder != nil {
 		// Used for socks5 proxying
