@@ -20,6 +20,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"sync/atomic"
 	"time"
 
 	"github.com/palantir/pkg/bytesbuffers"
@@ -111,6 +112,18 @@ func NewClient(params ...ClientParam) (Client, error) {
 		errorDecoderMiddleware:        edm,
 		bufferPool:                    b.BytesBufferPool,
 	}, nil
+}
+
+func NewRefreshingClient(config RefreshableClientConfig, params ...ClientParam) (Client, error) {
+	client := refreshableClientImpl{params: params, val: &atomic.Value{}}
+	params = append(params, WithConfig(config.CurrentClientConfig()))
+	initialClient, err := NewClient(params...)
+	if err != nil {
+		return nil, err
+	}
+	client.val.Store(initialClient)
+	config.SubscribeToClientConfig(client.Update)
+	return client, nil
 }
 
 func getDefaultHTTPClientBuilder() *httpClientBuilder {
